@@ -21,7 +21,9 @@ provider "github" {
 // timestamp içeren benzersiz bir isim üretilir. Bu sayede her run farklı bir repo yaratır.
 locals {
   # Kullanıcı `repo_name` verirse onu kullan; yoksa timestamp ile benzersiz isim oluştur.
-  repo_name = var.repo_name != "" ? var.repo_name : "auto-repo-${formatdate("YYYYMMDDHHMMSS", timestamp())}"
+  # Not: Terraform'un formatdate() fonksiyonu Go zaman formatını kullanır (örnek: 2006=YYYY, 01=MM, 02=DD, 15=HH, 04=MM, 05=SS).
+  # Bu yüzden 'YYYYMMDDHHMMSS' gibi ifadeler çalışmaz; aşağıdaki layout doğru bir zaman damgası üretir.
+  repo_name = var.repo_name != "" ? var.repo_name : "auto-repo-${formatdate("20060102150405", timestamp())}"
 }
 
 // Kaynak: GitHub üzerinde yeni bir repository oluşturur.
