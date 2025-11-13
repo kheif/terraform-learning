@@ -1,6 +1,4 @@
 .terraform/
-# Lokal Terraform çalışma dizini ve state dosyaları; bunlar repoya eklenmemelidir.
 terraform.tfstate
 terraform.tfstate.backup
-# Değişken dosyaları içinde secret olabilecek tfvars'i hariç tut.
 *.tfvars

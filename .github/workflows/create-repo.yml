@@ -1,10 +1,6 @@
-# Workflow adı: ne yaptığı kısa olarak yazılır.
 name: Create repo on schedule
 
-# Tetikleyiciler: cron ile zamanlanmış çalıştırma ve manuel tetikleme (dispatch).
 on:
-  # Sadece manuel tetikleme: workflow_dispatch ile kullanıcı input verebilir.
-  # Eğer input verilmezse bir timestamp tabanlı benzersiz isim üretilir.
   workflow_dispatch:
     inputs:
       repo_name:
@@ -12,7 +8,6 @@ on:
         required: false
         default: ''
 
-# Workflow izinleri: içeriklere yazma hakkı. Ayrıca PAT ile daha geniş yetkiler sağlanır.
 permissions:
   contents: write
 
@@ -21,21 +16,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        # Depoyu checkout eder; terraform dosyalarını ve workflow'u çalıştırabilmek için gerekli.
         uses: actions/checkout@v4
 
       - name: Setup Terraform
-        # Terraform çalışma zamanı ortamını kurar.
         uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: 1.5.7
 
-      - name: Terraform Init
-        # Terraform init: gerekli provider'ları indirir ve başlangıç yapılandırmasını yapar.
-        # Env üzerinden `TF_VAR_github_token` veriliyor, böylece provider token'ı alır.
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive
+
       - name: Set repo name
-        # TF değişkeni `TF_VAR_repo_name` burada ayarlanır: input varsa onu kullan,
-        # yoksa timestamp ile benzersiz bir isim üret (auto-repo-YYYYMMDDHHMMSS).
         run: |
           if [ -n "${{ github.event.inputs.repo_name }}" ]; then
             echo "TF_VAR_repo_name=${{ github.event.inputs.repo_name }}" >> $GITHUB_ENV
@@ -43,14 +34,23 @@ jobs:
             echo "TF_VAR_repo_name=auto-repo-$(date -u +%Y%m%d%H%M%S)" >> $GITHUB_ENV
           fi
         shell: bash
+
+      - name: Terraform Init
         env:
           TF_VAR_github_token: ${{ secrets.GH_PAT }}
           TF_VAR_github_owner: ${{ github.repository_owner }}
         run: terraform init -input=false
 
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        env:
+          TF_VAR_github_token: ${{ secrets.GH_PAT }}
+          TF_VAR_github_owner: ${{ github.repository_owner }}
+        run: terraform plan -input=false
+
       - name: Terraform Apply
-        # Terraform apply: planı uygular ve repo oluşturulur. `-auto-approve` ile otomatik onay verilir.
-        # Uyarı: her apply yeni bir repo oluşturacaktır (state saklanmadığı için).
         env:
           TF_VAR_github_token: ${{ secrets.GH_PAT }}
           TF_VAR_github_owner: ${{ github.repository_owner }}
