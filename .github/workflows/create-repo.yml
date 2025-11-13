@@ -3,11 +3,14 @@ name: Create repo on schedule
 
 # Tetikleyiciler: cron ile zamanlanmış çalıştırma ve manuel tetikleme (dispatch).
 on:
-  schedule:
-  # Her 2 dakikada bir tetikler (UTC zaman diliminde çalışır).
-  - cron: '*/2 * * * *'
-  # `workflow_dispatch` elle başlatma imkanı sağlar.
+  # Sadece manuel tetikleme: workflow_dispatch ile kullanıcı input verebilir.
+  # Eğer input verilmezse bir timestamp tabanlı benzersiz isim üretilir.
   workflow_dispatch:
+    inputs:
+      repo_name:
+        description: 'Opsiyonel: oluşturulacak repo ismi. Boşsa timestamp kullanılacak.'
+        required: false
+        default: ''
 
 # Workflow izinleri: içeriklere yazma hakkı. Ayrıca PAT ile daha geniş yetkiler sağlanır.
 permissions:
@@ -30,6 +33,16 @@ jobs:
       - name: Terraform Init
         # Terraform init: gerekli provider'ları indirir ve başlangıç yapılandırmasını yapar.
         # Env üzerinden `TF_VAR_github_token` veriliyor, böylece provider token'ı alır.
+      - name: Set repo name
+        # TF değişkeni `TF_VAR_repo_name` burada ayarlanır: input varsa onu kullan,
+        # yoksa timestamp ile benzersiz bir isim üret (auto-repo-YYYYMMDDHHMMSS).
+        run: |
+          if [ -n "${{ github.event.inputs.repo_name }}" ]; then
+            echo "TF_VAR_repo_name=${{ github.event.inputs.repo_name }}" >> $GITHUB_ENV
+          else
+            echo "TF_VAR_repo_name=auto-repo-$(date -u +%Y%m%d%H%M%S)" >> $GITHUB_ENV
+          fi
+        shell: bash
         env:
           TF_VAR_github_token: ${{ secrets.GH_PAT }}
           TF_VAR_github_owner: ${{ github.repository_owner }}
