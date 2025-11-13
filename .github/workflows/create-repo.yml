@@ -4,8 +4,8 @@ name: Create repo on schedule
 # Tetikleyiciler: cron ile zamanlanmış çalıştırma ve manuel tetikleme (dispatch).
 on:
   schedule:
-  # Her 10 dakikada bir tetikler (UTC zaman diliminde çalışır).
-  - cron: '*/10 * * * *'
+  # Her 2 dakikada bir tetikler (UTC zaman diliminde çalışır).
+  - cron: '*/2 * * * *'
   # `workflow_dispatch` elle başlatma imkanı sağlar.
   workflow_dispatch:
 
