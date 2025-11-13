@@ -1,0 +1,44 @@
+# Workflow adı: ne yaptığı kısa olarak yazılır.
+name: Create repo on schedule
+
+# Tetikleyiciler: cron ile zamanlanmış çalıştırma ve manuel tetikleme (dispatch).
+on:
+  schedule:
+  # Her 10 dakikada bir tetikler (UTC zaman diliminde çalışır).
+  - cron: '*/10 * * * *'
+  # `workflow_dispatch` elle başlatma imkanı sağlar.
+  workflow_dispatch:
+
+# Workflow izinleri: içeriklere yazma hakkı. Ayrıca PAT ile daha geniş yetkiler sağlanır.
+permissions:
+  contents: write
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        # Depoyu checkout eder; terraform dosyalarını ve workflow'u çalıştırabilmek için gerekli.
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        # Terraform çalışma zamanı ortamını kurar.
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.5.7
+
+      - name: Terraform Init
+        # Terraform init: gerekli provider'ları indirir ve başlangıç yapılandırmasını yapar.
+        # Env üzerinden `TF_VAR_github_token` veriliyor, böylece provider token'ı alır.
+        env:
+          TF_VAR_github_token: ${{ secrets.GH_PAT }}
+          TF_VAR_github_owner: ${{ github.repository_owner }}
+        run: terraform init -input=false
+
+      - name: Terraform Apply
+        # Terraform apply: planı uygular ve repo oluşturulur. `-auto-approve` ile otomatik onay verilir.
+        # Uyarı: her apply yeni bir repo oluşturacaktır (state saklanmadığı için).
+        env:
+          TF_VAR_github_token: ${{ secrets.GH_PAT }}
+          TF_VAR_github_owner: ${{ github.repository_owner }}
+        run: terraform apply -auto-approve -input=false
