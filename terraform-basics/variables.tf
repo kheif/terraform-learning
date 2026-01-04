@@ -1,15 +1,24 @@
 variable "filename" {
-  default = "root/pets.txt"
+  type = list(string)
+  description = "the path of local file"
 }
-variable "content" {
-  default = "We love pets!"
+variable "file-content" {
+  type = map(string)
+  description = "the content of the file"
+}
+variable "file-permission" {
+  type = map(string)
+  description = "the permission of the file"
 }
 variable "prefix" {
-  default = "Mrs"
+  type = list(string)
+  description = "list of prefixes"
 }
 variable "separator" {
-  default = "."
+  type = string
+  description = "the separator between prefix and name"
 }
 variable "length" {
-  default = 1
+  type = number
+  description = "length of the pet name"
 }
